@@ -48,5 +48,5 @@ def accel(y, vel, Cd):
     :param density: density of outer fluid
     :TODO:
     """
-    
-    drag_force = 0.5 * Cd * area * density * vel**2
+    water_density = 1 #TODO density of water in correct units
+    drag_force = 0.5 * Cd * area * water_density * vel**2
