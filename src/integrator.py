@@ -5,31 +5,36 @@ Generic numeric integrations for 2017 microgravity project
 import math
 
 
-max_y = 1 - 1/math.sqrt(3)
+max_y_base = 1 - 1/math.sqrt(3) #max y (when multiplied by B in egg_function)
 
-def egg_function(y, A):
-    """
+def egg_function(y, width, height):
+    """ 
     Creates an egg with the desired parameters
     
     :param y: the desired Y value of the egg function
-    :param A: coefficient which increases width of egg
+    :param width: coefficient which increases width of egg (formerly 'A')
+    :param height: height of egg (egg is normally y in [0,1] but this changes 1)
     """
     #TODO figure out what other parameters are required for egg function
-    return math.sqrt(y * (1 - y) * (1 - y/2))
+    max_y = max_y_base * height
+    if y > max_y:
+        pass #TODO James's ellipse formula
+    else:
+        A0 = 1 / (4 * max_y_base * (1-max_y_base) * (1-max_y_base/2))
+        return width * math.sqrt(A0 / height * (1 - y/height) * (1 - y/(2*height)))
 
-def groove_function(y):
-    """
+def groove_function(y, depth):
+    """ 
     Creates a Groove for an egg with the desired parameters
     
     :param y: the Y value of the groove
-    :param TODO: other parameters governing grove depth
+    :param depth: depth coefficient of groove (#TODO the meaning of this is up to James)
     :return: Returns groove function x value at position y
     """
-    #TODO figure out what other parameters
-    pass #TODO
+    pass #TODO James
 
 def egg_derivative(y, A):
-    """
+    """ 
     Calculates derivative of egg function at position y
     
     :param y: y position for which to find egg prime
@@ -39,7 +44,7 @@ def egg_derivative(y, A):
     return A / (2 * egg_function(y, A)) * (3/2 * y**2 - 3 * y + 1)
 
 def perimeter(y, groove_angle, n, A):
-    """
+    """ 
     Calculates the perimeter of an egg on a cross-section
     
     :param y: the Y value of the desired cross-section
@@ -57,7 +62,7 @@ def perimeter(y, groove_angle, n, A):
     return part1 + part2
 
 def area(y):
-    """
+    """ 
     Calculates the frontal area of an egg
     
     :param y: the Y value of a desired egg for calculation
