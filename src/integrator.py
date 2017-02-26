@@ -98,6 +98,7 @@ def accel(y, vel, Cd, density, height, width, groove_angle, n, sur_ten, capillar
     TODO = 0 #should be slope
     capillary_force = perimeter(y, width, height, groove_angle, n, depth) * math.cos(capillary_angle + math.atan(TODO)) * sur_ten
     force = -drag_force + capillary_force #drag pushes up and capillary force pulls down #TODO check signs
+    print("drag=%s, capillary=%s" % (drag_force, capillary_force))
     return force / mass
 
 def v_next(y_next, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth, dt):
@@ -131,11 +132,12 @@ def integrate(Cd, density, height, width, groove_angle, n, sur_ten, capillary_an
         data[0,i] = t_i + dt
         data[1,i] = y_f = y_i + v_i * dt + 0.5 * a_i * dt**2
         data[2,i] = v_next(y_f, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth, dt)
+        print("yi=%s, vi=%s, ai=%s,    yf=%s, vf=%s" % (y_i, v_i, a_i, y_f, data[2,i]))
     return data
 
 if __name__ == "__main__":
     print(tau)
-    data = integrate(Cd=0.5, density=0.3, height=1, width=1, groove_angle=tau/8, n=8, sur_ten=0.5, capillary_angle=tau/20, mass=0.1, depth=0.05, dt=0.00001)
+    data = integrate(Cd=0.5, density=0.003, height=1, width=1, groove_angle=tau/8, n=8, sur_ten=0.5, capillary_angle=tau/20, mass=0.1, depth=0.05, dt=0.00001)
     print("depth: %f" % max(data[1]))
     plt.plot(data[0], data[1], 'r-')
     plt.plot(data[0], data[2], 'b-')
