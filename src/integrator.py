@@ -20,13 +20,11 @@ def egg_function(y, width, height):
     """
     #TODO figure out what other parameters are required for egg function
     max_y = max_y_base * height
-    if y > max_y:
-        pass #TODO James's ellipse formula
-    else:
-        A0 = 1 / (4 * max_y_base * (1-max_y_base) * (1-max_y_base/2))
-        return width * math.sqrt(A0 / height * (1 - y/height) * (1 - y/(2*height)))
+    #TODO if y > max_y: do ellipse
+    A0 = 1 / (4 * max_y_base * (1-max_y_base) * (1-max_y_base/2))
+    return width * math.sqrt(A0 / height * (1 - y/height) * (1 - y/(2*height)))
 
-def groove_function(y, depth):
+def groove_function(y, depth, width, height):
     """ 
     Creates a Groove for an egg with the desired parameters
     
@@ -34,7 +32,9 @@ def groove_function(y, depth):
     :param depth: depth coefficient of groove (#TODO the meaning of this is up to James)
     :return: Returns groove function x value at position y
     """
-    pass #TODO James
+    #TODO TODO TODO major TODO
+    groove = egg_function(y, width, height) - depth
+    return groove if groove > 0 else 0
 
 def egg_derivative(y, A):
     """ 
@@ -47,19 +47,22 @@ def egg_derivative(y, A):
     return A**2 * A0 / (2*B * egg_function(y, A)) * (3/2 * y**2 / B**2 - 3 * y / B + 1)
     #TODO if we're going to use a different shape for the groove, this is wrong
 
-def perimeter(y, width, height, groove_angle, n):
+def perimeter(y, width, height, groove_angle, n, depth):
     """ 
     Calculates the perimeter of an egg on a cross-section
     
     :param y: the Y value of the desired cross-section
     :param groove_angle: surface angle to center of egg of each groove
     :param n: number of grooves
+    :param depth: depth coefficient of groove function
     :return: Returns perimeter of egg intersection with plane at position y
     """
     max_y = max_y_base * height
+    print("%f <= %f <= %f ?" % (max_y, y, 1))
+    max_y = 0 #TODO remove this
     assert max_y <= y <= 1, "y out of range" #checks range (does not include perimeter below max point)
     w = egg_function(y, width, height) * 2 #egg width
-    d = w / 2 - groove_function(y, depth) #depth = w/2 - groove function
+    d = w / 2 - groove_function(y, depth, width, height) #depth = w/2 - groove function
     #separated into parts for typing simplicity
     #derivation by Gracen
     part1 = n * w / 2 * (tau / n - groove_angle)
@@ -79,7 +82,7 @@ def frontal_area(width, height):
     radius = egg_function(max_y, height, width)
     return tau / 2 * radius**2 #area of circle
 
-def accel(y, vel, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass):
+def accel(y, vel, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth):
     """ 
     Calculates acceleration on a specific egg
     
@@ -92,21 +95,23 @@ def accel(y, vel, Cd, density, height, width, groove_angle, n, sur_ten, capillar
     :param groove_angle: surface angle of groove (from center of egg) - cannot be larger than tau / n
     """
     drag_force = 0.5 * Cd * frontal_area(height, width) * density * vel**2
-    capillary_force = perimeter(y, width, height, groove_angle, n) * math.cos(capillary_angle + math.atan(TODO)) * sur_ten
-    force = drag_force - capillary_force #drag pushes up and capillary force pulls down
+    TODO = 0 #should be slope
+    capillary_force = perimeter(y, width, height, groove_angle, n, depth) * math.cos(capillary_angle + math.atan(TODO)) * sur_ten
+    force = -drag_force + capillary_force #drag pushes up and capillary force pulls down #TODO check signs
     return force / mass
 
-def v_next(y_next, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, dt):
+def v_next(y_next, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth, dt):
     u_part = v_i + a_i / 2 * dt
-    z_part = perimeter(y_next, width, height, groove_angle, n) * math.cos(capillary_angle + math.atan(TODO)) * sur_ten
+    TODO = 0 #slope of zero implying it never changes - should be derivative or somethign similar
+    z_part = perimeter(y_next, width, height, groove_angle, n, depth) * math.cos(capillary_angle + math.atan(TODO)) * sur_ten
     w = egg_function(y_next, width, height) * 2 #egg width
-    A = -dt * Cd * tau * w**2 * density / (8 * m) # A in quadratic formula Ax^2 + Bx + C
+    A = -dt * Cd * tau * w**2 * density / (8 * mass) # A in quadratic formula Ax^2 + Bx + C
     B = -1
-    C = u_part + dt / (2 * m) * z_part
+    C = u_part + dt / (2 * mass) * z_part
     v_f = (-B + math.sqrt(B**2 - 4 * A * C)) / (2 * A) #quadratic formula #TODO is it plus or minus?
     return v_f
 
-def integrate(Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, dt=0.01, time=2.2):
+def integrate(Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth, dt=0.01, time=2.2):
     """ 
     Integrates starting with y0 at maximum of egg and v0 = 0
     :TODO params
@@ -120,16 +125,17 @@ def integrate(Cd, density, height, width, groove_angle, n, sur_ten, capillary_an
         t_i = data[0,i-1] #previous time
         y_i = data[1,i-1] #previous position
         v_i = data[2,i-1] #previous velocity
-        a_i = accel(y_i, v_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass)
+        a_i = accel(y_i, v_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth)
 
+        #leapfrog algorithm (modified to work better)
         data[0,i] = t_i + dt
-        data[1,i] = v_i * dt + 0.5 * a_i * dt**2 #leapfrog algorithm part 1
-        data[2,i] = v_next(y_f, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, dt)
+        data[1,i] = y_f = y_i + v_i * dt + 0.5 * a_i * dt**2
+        data[2,i] = v_next(y_f, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth, dt)
     return data
 
 if __name__ == "__main__":
     print(tau)
-    data = integrate(Cd=0.5, density=0.3, height=1, width=1, groove_angle=tau/8, n=8, sur_ten=0.5, capillary_angle=tau/20, mass=0.1)
+    data = integrate(Cd=0.5, density=0.3, height=1, width=1, groove_angle=tau/8, n=8, sur_ten=0.5, capillary_angle=tau/20, mass=0.1, depth=0.05, dt=0.00001)
     print("depth: %f" % max(data[1]))
     plt.plot(data[0], data[1], 'r-')
     plt.plot(data[0], data[2], 'b-')
