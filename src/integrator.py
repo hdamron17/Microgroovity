@@ -41,9 +41,10 @@ def egg_derivative(y, A):
     :param A: A width coefficient for egg function
     :return: Returns derivative of egg function at position y
     """
-    return A / (2 * egg_function(y, A)) * (3/2 * y**2 - 3 * y + 1)
+    return A**2 * A0 / (2*B * egg_function(y, A)) * (3/2 * y**2 / B**2 - 3 * y / B + 1)
+    #Derivative by Hunter with slight alteration to include coefficients
 
-def perimeter(y, groove_angle, n, A):
+def perimeter(y, width, height, groove_angle, n, A):
     """ 
     Calculates the perimeter of an egg on a cross-section
     
@@ -53,7 +54,7 @@ def perimeter(y, groove_angle, n, A):
     :return: Returns perimeter of egg intersection with plane at position y
     """
     assert max_y <= y <= 1, "y out of range" #checks range (does not include perimeter below max point)
-    w = egg_function(y, A) * 2 #egg width
+    w = egg_function(y, width, height) * 2 #egg width
     d = w / 2 - groove_function(y) #depth = w/2 - groove function
     #separated into parts for typing simplicity
     #derivation by Gracen
@@ -61,13 +62,18 @@ def perimeter(y, groove_angle, n, A):
     part2 = 2*n * math.sqrt(d**2 + 1/8 * w**2 * (1-math.cos(groove_angle)))
     return part1 + part2
 
-def area(y):
+def frontal_area(width, height):
     """ 
     Calculates the frontal area of an egg
     
     :param y: the Y value of a desired egg for calculation
+    :param width: width coefficient of egg
+    :param height: height coefficient of egg
+    :return: Returns frontal area of egg (used for drag)
     """
-    
+    max_y = max_y_base * height
+    radius = egg_function(max_y, height, width)
+    return math.tau / 2 * radius**2 #area of circle
 
 def accel(y, vel, Cd):
     """ 
@@ -79,8 +85,8 @@ def accel(y, vel, Cd):
     :param density: density of outer fluid
     :TODO:
     """
-    water_density = 1 #TODO density of water in correct units
-    drag_force = 0.5 * Cd * area * water_density * vel**2
+    drag_force = 0.5 * Cd * frontal_area(height, width) * density * vel**2
+    capillary_force = (n*width /2 * (math.tau/n - 
 
 def depth():
     y0 = max_y
