@@ -85,7 +85,7 @@ def frontal_area(width, height):
     radius = egg_function(max_y, height, width)
     return tau / 2 * radius**2 #area of circle
 
-def accel(y, vel, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth):
+def accel(y, vel, Cd, density, height, width, groove_angle, n, sur_ten, contact_angle, mass, depth):
     """ 
     Calculates acceleration on a specific egg
     
@@ -101,19 +101,19 @@ def accel(y, vel, Cd, density, height, width, groove_angle, n, sur_ten, capillar
     if y <= height:
         slope = egg_derivative(y, width, height)
         #print("atan(%s) = %s; cos(atan(%s)) = %s" % (slope, math.atan(slope), slope, math.cos(math.atan(slope)))) #TODO remove
-        capillary_force = perimeter(y, width, height, groove_angle, n, depth) * math.cos(capillary_angle + math.atan(slope)) * sur_ten
+        capillary_force = perimeter(y, width, height, groove_angle, n, depth) * math.cos(contact_angle + math.atan(slope)) * sur_ten
     else:
         capillary_force = 0 #TODO check force after it has gone through if there is any up force
     force = -drag_force + capillary_force #drag pushes up and capillary force pulls down #TODO check signs
     #print("drag=%s, capillary=%s" % (drag_force, capillary_force))
     return force / mass
 
-def v_next(y_next, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth, dt):
+def v_next(y_next, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_ten, contact_angle, mass, depth, dt):
     u_part = v_i + a_i / 2 * dt
     #TODO = 0 #slope of zero implying it never changes - should be derivative or somethign similar
     if y_next <= height:
         slope = egg_derivative(y_next, width, height)
-        z_part = perimeter(y_next, width, height, groove_angle, n, depth) * math.cos(capillary_angle + math.atan(slope)) * sur_ten
+        z_part = perimeter(y_next, width, height, groove_angle, n, depth) * math.cos(contact_angle + math.atan(slope)) * sur_ten
     else:
         z_part = 0 #TODO check that there are no capillary forces now
     w = egg_function(max_y_base * height, width, height) * 2 #egg width
@@ -123,7 +123,7 @@ def v_next(y_next, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_te
     v_f = (-B - math.sqrt(B**2 - 4 * A * C)) / (2 * A) #quadratic formula #TODO is it plus or minus?
     return v_f
 
-def integrate(Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth, dt=0.01, time=2.2):
+def integrate(Cd, density, height, width, groove_angle, n, sur_ten, contact_angle, mass, depth, dt=0.01, time=2.2):
     """ 
     Integrates starting with y0 at maximum of egg and v0 = 0
     :param Cd: coefficient of drag (likely approximation of 0.5 for semisphere)
@@ -144,17 +144,56 @@ def integrate(Cd, density, height, width, groove_angle, n, sur_ten, capillary_an
         t_i = data[0,i-1] #previous time
         y_i = data[1,i-1] #previous position
         v_i = data[2,i-1] #previous velocity
-        a_i = accel(y_i, v_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth)
+        a_i = accel(y_i, v_i, Cd, density, height, width, groove_angle, n, sur_ten, contact_angle, mass, depth)
 
         #leapfrog algorithm (modified to work better)
         data[0,i] = t_i + dt
         data[1,i] = y_f = y_i + v_i * dt + 0.5 * a_i * dt**2
-        data[2,i] = v_next(y_f, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth, dt)
+        data[2,i] = v_next(y_f, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_ten, contact_angle, mass, depth, dt)
         #print("yi=%s, vi=%s, ai=%s,    yf=%s, vf=%s" % (y_i, v_i, a_i, y_f, data[2,i]))
     return data
 
+def check_domains(domains):
+    """ 
+    Checks that all values are within various constraints
+    
+    :param domains: dictionary of { value:(min,max) }
+    :return: returns True if all values are valid, else False
+    """
+    for key, value in domains.items():
+        if value[0] > value[1] or value[0] > key < value[1]:
+            return False
+        return True
+
+def dive_depth(Cd, density, height, width, groove_angle, n, sur_ten, contact_angle, mass, depth, dt=0.01, time=2.2):
+    """ 
+    Wrapper over integration method which returns 0 if parameters are invalid else returns the depth of the dive, not including initial position
+    """
+    domains = {
+        Cd : (0, math.inf),
+        density : (0, math.inf),
+        height : (0, math.inf),
+        width : (0, math.inf),
+        groove_angle : (0, tau/n),
+        n : (0, math.inf),
+        sur_ten : (0, math.inf),
+        contact_angle : (0, tau / 2),
+        mass : (0, math.inf),
+        depth : (0, depth / 2 if groove_angle > 0 else 0),
+        dt : (0, math.inf),
+        time : (0, math.inf)
+    }
+    if not check_domains(domains):
+        return 0
+    dive_data = integrate(Cd, density, height, width, groove_angle, n, sur_ten, contact_angle, mass, depth, dt, time)
+    y0 = dive_data[1,0] #initial y position
+    yf = dive_data[1].max()
+    depth = yf - y0
+    return depth
+
 if __name__ == "__main__":
-    data = integrate(Cd=0.5, density=0.3, height=1, width=1, groove_angle=tau/8, n=8, sur_ten=0.5, capillary_angle=tau/20, mass=0.1, depth=0.05, dt=0.001)
+    print(dive_depth(Cd=0.5, density=1000, height=0.05, width=0.05, groove_angle=tau/8, n=8, sur_ten=0.0728, contact_angle=tau/20, mass=0.1, depth=0.001, dt=0.001))
+    data = integrate(Cd=0.5, density=1000, height=0.05, width=0.05, groove_angle=tau/8, n=8, sur_ten=0.0728, contact_angle=tau/20, mass=0.1, depth=0.001, dt=0.001)
     #print("depth: %f" % max(data[1]))
     plt.plot(data[0], data[1], 'r-', label="postion")
     plt.plot(data[0], data[2], 'b-', label="velocity")
