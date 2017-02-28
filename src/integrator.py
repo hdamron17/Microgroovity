@@ -19,7 +19,7 @@ def egg_function(y, width, height):
     :param height: height of egg (egg is normally y in [0,1] but this changes 1)
     """
     max_y = max_y_base * height
-    assert max_y <= y <= 1, "y value %f out of range" % y #checks range
+    assert max_y <= y <= height, "y value %f out of range" % y #checks range
     #TODO if y > max_y: do ellipse
     A0 = 1 / (4 * max_y_base * (1-max_y_base) * (1-max_y_base/2))
     return width * math.sqrt(A0 / height * (1 - y/height) * (1 - y/(2*height)))
@@ -33,7 +33,7 @@ def groove_function(y, depth, width, height):
     :return: Returns groove function x value at position y
     """
     #TODO TODO TODO major TODO
-    assert max_y_base * height <= y <= 1, "y value %f out of range" % y #checks range
+    assert max_y_base * height <= y <= height, "y value %f out of range" % y #checks range
     groove = egg_function(y, width, height) - depth
     return groove if groove > 0 else 0
 
@@ -45,7 +45,7 @@ def egg_derivative(y, width, height):
     :param A: A width coefficient for egg function
     :return: Returns derivative of egg function at position y
     """
-    assert max_y_base * height <= y <= 1, "y value %f out of range" % y #checks range
+    assert max_y_base * height <= y <= height, "y value %f out of range" % y #checks range
     A0 = 1 / (4 * max_y_base * (1-max_y_base) * (1-max_y_base/2))
     return width**2 * A0 / (2*height * egg_function(y, width, height)) * (3/2 * y**2 / height**2 - 3 * y / height + 1)
     #The original derivation yields dx/dy but then it is inversed to dy/dx #TODO check validity of this statement
@@ -62,8 +62,8 @@ def perimeter(y, width, height, groove_angle, n, depth):
     :return: Returns perimeter of egg intersection with plane at position y
     """
     max_y = max_y_base * height
-    #print("%f <= %f <= %f ?" % (max_y, y, 1))
-    assert max_y <= y <= 1, "y value %f out of range" % y #checks range (does not include perimeter below max point)
+    #print("%f <= %f <= %f ?" % (max_y, y, height))
+    assert max_y <= y <= height, "y value %f out of range" % y #checks range (does not include perimeter below max point)
     w = egg_function(y, width, height) * 2 #egg width
     d = w / 2 - groove_function(y, depth, width, height) #depth = w/2 - groove function
     #separated into parts for typing simplicity
@@ -173,16 +173,16 @@ def dive_depth(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten
     :return: returns depth of dive (subtracts starting y) or 0 if parameters are out of bounds
     """
     domains = {
-        Cd : (0, math.inf),
-        density : (0, math.inf),
-        height : (0, math.inf),
-        width : (0, math.inf),
+        Cd : (0, 1), #TODO is this a valid bound
+        height : (0, 0.1), #TODO find real limit
+        width : (0, 0.1), #TODO find real limit
         groove_angle : (0, tau/n),
-        n : (0, math.inf),
+        n : (0, 20), #TODO decide on actual max n
+        mass : (0, 1), #TODO find real limit
+        depth : (0, depth / 2 if groove_angle > 0 else 0),
+        density : (0, math.inf),
         sur_ten : (0, math.inf),
         contact_angle : (0, tau / 2),
-        mass : (0, math.inf),
-        depth : (0, depth / 2 if groove_angle > 0 else 0),
         dt : (0, math.inf),
         time : (0, math.inf)
     }
@@ -214,6 +214,7 @@ def depth_wrapper(params, density, sur_ten, contact_angle, dt=0.01, time=2.2):
 example_params = (0.5, 0.05, 0.05, tau/8, 8, 0.1, 0.001, 1000, 0.0728, tau/20, 0.001, 2.2)
 
 if __name__ == "__main__":
+    print(depth_wrapper(example_params[:7], *example_params[7:]))
     print(dive_depth(*example_params))
     data = integrate(*example_params)
     #print("depth: %f" % max(data[1]))
