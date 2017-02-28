@@ -1,4 +1,4 @@
-#! /usr/bin/python 
+#! /usr/bin/python
 """ 
 Groovy egg diving numeric integrations for 2017 microgravity project
 """
@@ -37,7 +37,7 @@ def groove_function(y, depth, width, height):
     groove = egg_function(y, width, height) - depth
     return groove if groove > 0 else 0
 
-def egg_derivative(y, A):
+def egg_derivative(y, width, height):
     """ 
     Calculates derivative of egg function at position y
     
@@ -46,7 +46,9 @@ def egg_derivative(y, A):
     :return: Returns derivative of egg function at position y
     """
     assert max_y_base * height <= y <= 1, "y value %f out of range" % y #checks range
-    return A**2 * A0 / (2*B * egg_function(y, A)) * (3/2 * y**2 / B**2 - 3 * y / B + 1)
+    A0 = 1 / (4 * max_y_base * (1-max_y_base) * (1-max_y_base/2))
+    return width**2 * A0 / (2*height * egg_function(y, width, height)) * (3/2 * y**2 / height**2 - 3 * y / height + 1)
+    #The original derivation yields dx/dy but then it is inversed to dy/dx #TODO check validity of this statement
     #TODO if we're going to use a different shape for the groove, this is wrong
 
 def perimeter(y, width, height, groove_angle, n, depth):
@@ -95,10 +97,11 @@ def accel(y, vel, Cd, density, height, width, groove_angle, n, sur_ten, capillar
     :param width: width of egg
     :param groove_angle: surface angle of groove (from center of egg) - cannot be larger than tau / n
     """
-    drag_force = 0.5 * Cd * frontal_area(height, width) * density * vel**2
-    TODO = 0 #should be slope
+    drag_force = 0.5 * Cd * frontal_area(width, height) * density * vel**2
     if y <= height:
-        capillary_force = perimeter(y, width, height, groove_angle, n, depth) * math.cos(capillary_angle + math.atan(TODO)) * sur_ten
+        slope = egg_derivative(y, width, height)
+        #print("atan(%s) = %s; cos(atan(%s)) = %s" % (slope, math.atan(slope), slope, math.cos(math.atan(slope)))) #TODO remove
+        capillary_force = perimeter(y, width, height, groove_angle, n, depth) * math.cos(capillary_angle + math.atan(slope)) * sur_ten
     else:
         capillary_force = 0 #TODO check force after it has gone through if there is any up force
     force = -drag_force + capillary_force #drag pushes up and capillary force pulls down #TODO check signs
@@ -107,11 +110,12 @@ def accel(y, vel, Cd, density, height, width, groove_angle, n, sur_ten, capillar
 
 def v_next(y_next, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth, dt):
     u_part = v_i + a_i / 2 * dt
-    TODO = 0 #slope of zero implying it never changes - should be derivative or somethign similar
+    #TODO = 0 #slope of zero implying it never changes - should be derivative or somethign similar
     if y_next <= height:
-        z_part = perimeter(y_next, width, height, groove_angle, n, depth) * math.cos(capillary_angle + math.atan(TODO)) * sur_ten
+        slope = egg_derivative(y_next, width, height)
+        z_part = perimeter(y_next, width, height, groove_angle, n, depth) * math.cos(capillary_angle + math.atan(slope)) * sur_ten
     else:
-        z_part = 0 #TODO check that there are no forces now
+        z_part = 0 #TODO check that there are no capillary forces now
     w = egg_function(max_y_base * height, width, height) * 2 #egg width
     A = -dt * Cd * frontal_area(width, height) * density / (4 * mass) # A in quadratic formula Ax^2 + Bx + C
     B = -1
@@ -122,7 +126,14 @@ def v_next(y_next, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_te
 def integrate(Cd, density, height, width, groove_angle, n, sur_ten, capillary_angle, mass, depth, dt=0.01, time=2.2):
     """ 
     Integrates starting with y0 at maximum of egg and v0 = 0
-    :TODO params
+    :param Cd: coefficient of drag (likely approximation of 0.5 for semisphere)
+    :param density: water density rho {g/cm^3} #TODO check units on everything
+    :param height: height of egg {cm}
+    :param width: width of egg {cm}
+    :param groove_angle: surface angle of each groove starting from the center (must not exceed tau/n) {rad}
+    :param n: integer number of grooves
+    :param sur_ten: surface tnsion of water (the Wiki says 71.99 mN/m) {mN/m}
+    :TODO continue params
     :return: Returns numpy 2D array with rows: time, y position, y velocity
     """
     data = np.zeros((3, int(2.2 / dt))) #2D array with size 3 rows and row length of time times dt
@@ -143,9 +154,9 @@ def integrate(Cd, density, height, width, groove_angle, n, sur_ten, capillary_an
     return data
 
 if __name__ == "__main__":
-    print(tau)
     data = integrate(Cd=0.5, density=0.3, height=1, width=1, groove_angle=tau/8, n=8, sur_ten=0.5, capillary_angle=tau/20, mass=0.1, depth=0.05, dt=0.001)
     #print("depth: %f" % max(data[1]))
-    plt.plot(data[0], data[1], 'r-')
-    plt.plot(data[0], data[2], 'b-')
+    plt.plot(data[0], data[1], 'r-', label="postion")
+    plt.plot(data[0], data[2], 'b-', label="velocity")
+    plt.legend()
     plt.show()
