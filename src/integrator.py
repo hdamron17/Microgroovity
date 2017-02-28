@@ -123,7 +123,7 @@ def v_next(y_next, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_te
     v_f = (-B - math.sqrt(B**2 - 4 * A * C)) / (2 * A) #quadratic formula #TODO is it plus or minus?
     return v_f
 
-def integrate(Cd, density, height, width, groove_angle, n, sur_ten, contact_angle, mass, depth, dt=0.01, time=2.2):
+def integrate(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     """ 
     Integrates starting with y0 at maximum of egg and v0 = 0
     :param Cd: coefficient of drag (likely approximation of 0.5 for semisphere)
@@ -165,9 +165,12 @@ def check_domains(domains):
             return False
         return True
 
-def dive_depth(Cd, density, height, width, groove_angle, n, sur_ten, contact_angle, mass, depth, dt=0.01, time=2.2):
+def dive_depth(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     """ 
     Wrapper over integration method which returns 0 if parameters are invalid else returns the depth of the dive, not including initial position
+    
+    Note that all parameters are described in integrate() function comments
+    :return: returns depth of dive (subtracts starting y) or 0 if parameters are out of bounds
     """
     domains = {
         Cd : (0, math.inf),
@@ -185,15 +188,34 @@ def dive_depth(Cd, density, height, width, groove_angle, n, sur_ten, contact_ang
     }
     if not check_domains(domains):
         return 0
-    dive_data = integrate(Cd, density, height, width, groove_angle, n, sur_ten, contact_angle, mass, depth, dt, time)
+    dive_data = integrate(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt, time)
     y0 = dive_data[1,0] #initial y position
     yf = dive_data[1].max()
     depth = yf - y0
     return depth
 
+def depth_wrapper(params, density, sur_ten, contact_angle, dt=0.01, time=2.2):
+    """ 
+    Wrapper over the other wrapper which accepts all variable parameters in optimization as a single collection
+    
+    :param params: tuple containing 7 values which correspond to the first 7 parameters of dive_depth() function
+    Note: other parameters are described below integrate() function
+    :return: returns dive depth from the dive_depth function
+    """
+    Cd = params[0]
+    height = params[1]
+    width = params[2]
+    groove_angle = params[3]
+    n = params[4]
+    mass = params[5]
+    depth = params[6]
+    return dive_depth(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt, time)
+
+example_params = (0.5, 0.05, 0.05, tau/8, 8, 0.1, 0.001, 1000, 0.0728, tau/20, 0.001, 2.2)
+
 if __name__ == "__main__":
-    print(dive_depth(Cd=0.5, density=1000, height=0.05, width=0.05, groove_angle=tau/8, n=8, sur_ten=0.0728, contact_angle=tau/20, mass=0.1, depth=0.001, dt=0.001))
-    data = integrate(Cd=0.5, density=1000, height=0.05, width=0.05, groove_angle=tau/8, n=8, sur_ten=0.0728, contact_angle=tau/20, mass=0.1, depth=0.001, dt=0.001)
+    print(dive_depth(*example_params))
+    data = integrate(*example_params)
     #print("depth: %f" % max(data[1]))
     plt.plot(data[0], data[1], 'r-', label="postion")
     plt.plot(data[0], data[2], 'b-', label="velocity")
