@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 max_y_base = 1 - 1/math.sqrt(3) #max y (when multiplied by B in egg_function)
 tau = 2 * math.pi #tau revolution
 
+example_params = (0.5, 0.05, 0.05, tau/8, 8, 0.1, 0.001, 1000, 0.0728, tau/20, 0.001, 2.2)
+
 def egg_function(y, width, height):
     """ 
     Creates an egg with the desired parameters
@@ -186,13 +188,18 @@ def dive_depth(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten
         dt : (0, math.inf),
         time : (0, math.inf)
     }
+
     if not check_domains(domains):
         return 0
-    dive_data = integrate(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt, time)
-    y0 = dive_data[1,0] #initial y position
-    yf = dive_data[1].max()
-    depth = yf - y0
-    return depth
+    try:
+        dive_data = integrate(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt, time)
+        y0 = dive_data[1,0] #initial y position
+        yf = dive_data[1].max()
+        depth = yf - y0
+        return depth
+    except Exception as e:
+        #print("Excepted")
+        return 0
 
 def depth_wrapper(params, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     """ 
@@ -200,7 +207,8 @@ def depth_wrapper(params, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     
     :param params: tuple containing 7 values which correspond to the first 7 parameters of dive_depth() function
     Note: other parameters are described below integrate() function
-    :return: returns dive depth from the dive_depth function
+    :return: returns negative of dive depth from the dive_depth function
+    Note: negative because scipy implements minimize while we aim to maximize
     """
     Cd = params[0]
     height = params[1]
@@ -209,9 +217,10 @@ def depth_wrapper(params, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     n = params[4]
     mass = params[5]
     depth = params[6]
-    return dive_depth(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt, time)
-
-example_params = (0.5, 0.05, 0.05, tau/8, 8, 0.1, 0.001, 1000, 0.0728, tau/20, 0.001, 2.2)
+    #print(params) #TODO remove
+    total_depth = -dive_depth(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt, time)
+    #print(total_depth)
+    return total_depth
 
 if __name__ == "__main__":
     print(depth_wrapper(example_params[:7], *example_params[7:]))
