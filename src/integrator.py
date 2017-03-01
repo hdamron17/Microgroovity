@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 max_y_base = 1 - 1/math.sqrt(3) #max y (when multiplied by B in egg_function)
 tau = 2 * math.pi #tau revolution
 
-example_params = (0.5, 0.05, 0.05, tau/8, 8, 0.1, 0.001, 1000, 0.0728, tau/20, 0.001, 2.2)
+example_params = (0.05, 0.05, tau/8, 8, 0.1, 0.001, 0.5, 1000, 0.0728, tau/20, 0.001, 2.2)
 
 def egg_function(y, width, height):
     """ 
@@ -125,7 +125,7 @@ def v_next(y_next, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_te
     v_f = (-B - math.sqrt(B**2 - 4 * A * C)) / (2 * A) #quadratic formula #TODO is it plus or minus?
     return v_f
 
-def integrate(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt=0.01, time=2.2):
+def integrate(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     """ 
     Integrates starting with y0 at maximum of egg and v0 = 0
     :param Cd: coefficient of drag (likely approximation of 0.5 for semisphere)
@@ -164,10 +164,11 @@ def check_domains(domains):
     """
     for key, value in domains.items():
         if value[0] > value[1] or value[0] > key < value[1]:
+            print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
             return False
-        return True
+    return True
 
-def dive_depth(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt=0.01, time=2.2):
+def dive_depth(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     """ 
     Wrapper over integration method which returns 0 if parameters are invalid else returns the depth of the dive, not including initial position
     
@@ -178,7 +179,7 @@ def dive_depth(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten
         Cd : (0, 1), #TODO is this a valid bound
         height : (0, 0.1), #TODO find real limit
         width : (0, 0.1), #TODO find real limit
-        groove_angle : (0, tau/n),
+        groove_angle : (0, tau/n if n > 1 else 0),
         n : (0, 20), #TODO decide on actual max n
         mass : (0, 1), #TODO find real limit
         depth : (0, depth / 2 if groove_angle > 0 else 0),
@@ -192,16 +193,16 @@ def dive_depth(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten
     if not check_domains(domains):
         return 0
     try:
-        dive_data = integrate(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt, time)
+        dive_data = integrate(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt, time)
         y0 = dive_data[1,0] #initial y position
         yf = dive_data[1].max()
         depth = yf - y0
         return depth
     except Exception as e:
-        #print("Excepted")
+        print("Excepted")
         return 0
 
-def depth_wrapper(params, density, sur_ten, contact_angle, dt=0.01, time=2.2):
+def depth_wrapper(params, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     """ 
     Wrapper over the other wrapper which accepts all variable parameters in optimization as a single collection
     
@@ -210,20 +211,19 @@ def depth_wrapper(params, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     :return: returns negative of dive depth from the dive_depth function
     Note: negative because scipy implements minimize while we aim to maximize
     """
-    Cd = params[0]
-    height = params[1]
-    width = params[2]
-    groove_angle = params[3]
-    n = params[4]
-    mass = params[5]
-    depth = params[6]
+    height = params[0]
+    width = params[1]
+    groove_angle = params[2]
+    n = int(params[3])
+    mass = params[4]
+    depth = params[5]
     #print(params) #TODO remove
-    total_depth = -dive_depth(Cd, height, width, groove_angle, n, mass, depth, density, sur_ten, contact_angle, dt, time)
+    total_depth = -dive_depth(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt, time)
     #print(total_depth)
     return total_depth
 
 if __name__ == "__main__":
-    print(depth_wrapper(example_params[:7], *example_params[7:]))
+    print(depth_wrapper(example_params[:6], *example_params[6:]))
     print(dive_depth(*example_params))
     data = integrate(*example_params)
     #print("depth: %f" % max(data[1]))
