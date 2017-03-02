@@ -5,12 +5,27 @@ Groovy egg diving numeric integrations for 2017 microgravity project
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import OrderedDict
 
 
 max_y_base = 1 - 1/math.sqrt(3) #max y (when multiplied by B in egg_function)
 tau = 2 * math.pi #tau revolution
 
-example_params = (0.05, 0.05, tau/8, 8, 0.1, 0.001, 0.5, 1000, 0.0728, tau/20, 0.001, 2.2)
+example_params_dict = OrderedDict([
+    ("height",          0.05),
+    ("width",           0.05),
+    ("groove_angle",    tau/8),
+    ("n",               8),
+    ("mass",            0.01),
+    ("depth",           0.001),
+    ("density",         1000),
+    ("sur_ten",         0.0728),
+    ("contact_angle",   tau/20),
+    ("dt",              0.001),
+    ("time",            2.2)
+])
+example_params = tuple(example_params_dict.values())
+#print("ex -> " + str(example_params))
 
 def egg_function(y, width, height):
     """ 
@@ -164,7 +179,7 @@ def check_domains(domains):
     """
     for key, value in domains.items():
         if value[0] > value[1] or value[0] > key < value[1]:
-            print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
+            #print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
             return False
     return True
 
@@ -199,7 +214,7 @@ def dive_depth(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten
         depth = yf - y0
         return depth
     except Exception as e:
-        print("Excepted")
+        #print("Excepted")
         return 0
 
 def depth_wrapper(params, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
@@ -222,12 +237,19 @@ def depth_wrapper(params, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2
     #print(total_depth)
     return total_depth
 
+def plot_dive(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
+    data = integrate(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt, time)
+    plt.plot(data[0], data[1], 'r-', label="position")
+    plt.plot(data[0], data[2], 'b-', label="velocity")
+    plt.legend()
+    plt.title("Egg Dive Data")
+    plt.ylabel("Position (m) or Velocity (m/s)")
+    plt.xlabel("Time (s)")
+    plt.show()
+
 if __name__ == "__main__":
     print(depth_wrapper(example_params[:6], *example_params[6:]))
     print(dive_depth(*example_params))
     data = integrate(*example_params)
+    plot_dive(*example_params)
     #print("depth: %f" % max(data[1]))
-    plt.plot(data[0], data[1], 'r-', label="postion")
-    plt.plot(data[0], data[2], 'b-', label="velocity")
-    plt.legend()
-    plt.show()
