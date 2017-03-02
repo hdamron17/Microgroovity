@@ -78,8 +78,31 @@ def area(y, width, height, groove_angle, n, depth):
     :param groove_angle: surface angle of each groove from center (radians)
     :param n: number of grooves
     :param depth: depth of each groove
+    :return: returns area at a specific pointe
     """
-    pass #TODO
+    max_y = max_y_base * height
+    if y >= max_y:
+        part1 = width**2 / 8 * (tau - n * groove_angle)
+        part2 = math.sqrt(width**2 / 8 * (1-math.cos(groove_angle))) * (width / 2 - depth) if depth > 0 else 0
+        return part1 + part2
+    else:
+        return tau / 8 * width**2 #before grooves start
+
+def volume(y, width, height, groove_angle, n, depth, n_y=100):
+    """ 
+    Integrates area of the egg for egg volume (Euler approximation)
+    :params found somewhere else
+    :param n_y: number of y values to use in approximation
+    :return: returns volume of egg
+    """
+    total_volume = 0
+    dy = height / n_y
+    y = 0
+    max_y = max_y_base * height
+    for i in range(0,n_y):
+        single_area = area(y, width, height, groove_angle, n, depth)
+        total_volume += single_area * dy
+    return total_volume
 
 def perimeter(y, width, height, groove_angle, n, depth):
     """ 
@@ -192,7 +215,7 @@ def check_domains(domains):
     """
     for key, value in domains.items():
         if value[0] > value[1] or value[0] > key < value[1]:
-            print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
+            #print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
             return False
     return True
 
@@ -204,13 +227,13 @@ def dive_depth(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten
     :return: returns depth of dive (subtracts starting y) or 0 if parameters are out of bounds
     """
     domains = {
-        Cd : (0, 1), #TODO is this a valid bound
-        height : (0, 0.1), #TODO find real limit
-        width : (0, 0.1), #TODO find real limit
+        height : (0.05, 0.6), #TODO find real limit
+        width : (0.05, 0.6), #TODO find real limit
         groove_angle : (0, tau/n if n > 1 else 0),
         n : (0, 20), #TODO decide on actual max n
         mass : (0, 1), #TODO find real limit
         depth : (0, depth / 2 if groove_angle > 0 else 0),
+        Cd : (0, 1), #TODO is this a valid bound
         density : (0, math.inf),
         sur_ten : (0, math.inf),
         contact_angle : (0, tau / 2),
@@ -225,10 +248,10 @@ def dive_depth(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten
         y0 = dive_data[1,0] #initial y position
         yf = dive_data[1].max()
         depth = yf - y0
-        print("%s - %s = %s" % (yf, y0, yf-y0)) #TODO remove
+        #print("%s - %s = %s" % (yf, y0, yf-y0)) #TODO remove
         return depth
     except Exception as e:
-        print("Excepted")
+        #print("Excepted")
         return 0
 
 def depth_wrapper(params, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
