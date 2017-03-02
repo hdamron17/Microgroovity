@@ -18,6 +18,7 @@ example_params_dict = OrderedDict([
     ("n",               8),
     ("mass",            0.01),
     ("depth",           0.001),
+    ("Cd",              0.5),
     ("density",         1000),
     ("sur_ten",         0.0728),
     ("contact_angle",   tau/20),
@@ -25,7 +26,7 @@ example_params_dict = OrderedDict([
     ("time",            2.2)
 ])
 example_params = tuple(example_params_dict.values())
-#print("ex -> " + str(example_params))
+
 
 def egg_function(y, width, height):
     """ 
@@ -153,7 +154,7 @@ def integrate(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten,
     :TODO continue params
     :return: Returns numpy 2D array with rows: time, y position, y velocity
     """
-    data = np.zeros((3, int(2.2 / dt))) #2D array with size 3 rows and row length of time times dt
+    data = np.zeros((3, int(time / dt))) #2D array with size 3 rows and row length of time times dt
     data[0,0] = 0 #start time 0
     data[1,0] = max_y_base * height #starting y at max of egg
     data[2,0] = 0 #zero initial velocity
@@ -179,7 +180,7 @@ def check_domains(domains):
     """
     for key, value in domains.items():
         if value[0] > value[1] or value[0] > key < value[1]:
-            #print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
+            print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
             return False
     return True
 
@@ -212,9 +213,10 @@ def dive_depth(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten
         y0 = dive_data[1,0] #initial y position
         yf = dive_data[1].max()
         depth = yf - y0
+        print("%s - %s = %s" % (yf, y0, yf-y0)) #TODO remove
         return depth
     except Exception as e:
-        #print("Excepted")
+        print("Excepted")
         return 0
 
 def depth_wrapper(params, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
