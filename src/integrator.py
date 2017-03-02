@@ -16,7 +16,7 @@ example_params_dict = OrderedDict([
     ("width",           0.05),
     ("groove_angle",    tau/8),
     ("n",               8),
-    ("mass",            0.01),
+    ("egg_density",            0.01),
     ("depth",           0.001),
     ("Cd",              0.5),
     ("density",         1000),
@@ -88,7 +88,7 @@ def area(y, width, height, groove_angle, n, depth):
     else:
         return tau / 8 * width**2 #before grooves start
 
-def volume(y, width, height, groove_angle, n, depth, n_y=100):
+def volume(width, height, groove_angle, n, depth, n_y=100):
     """ 
     Integrates area of the egg for egg volume (Euler approximation)
     :params found somewhere else
@@ -176,19 +176,22 @@ def v_next(y_next, v_i, a_i, Cd, density, height, width, groove_angle, n, sur_te
     v_f = (-B - math.sqrt(B**2 - 4 * A * C)) / (2 * A) #quadratic formula #TODO is it plus or minus?
     return v_f
 
-def integrate(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
+def integrate(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     """ 
     Integrates starting with y0 at maximum of egg and v0 = 0
     :param Cd: coefficient of drag (likely approximation of 0.5 for semisphere)
-    :param density: water density rho {g/cm^3} #TODO check units on everything
-    :param height: height of egg {cm}
-    :param width: width of egg {cm}
+    :param density: water density rho {kg/m^3} #TODO check units on everything
+    :param height: height of egg {m}
+    :param width: width of egg {m}
     :param groove_angle: surface angle of each groove starting from the center (must not exceed tau/n) {rad}
     :param n: integer number of grooves
     :param sur_ten: surface tnsion of water (the Wiki says 71.99 mN/m) {mN/m}
-    :TODO continue params
+    :param egg_density: density of egg (greater than fluid density) {kg/m^3}
     :return: Returns numpy 2D array with rows: time, y position, y velocity
     """
+    egg_volume = volume(width, height, groove_angle, n, depth)
+    mass = density * egg_volume
+
     data = np.zeros((3, int(time / dt))) #2D array with size 3 rows and row length of time times dt
     data[0,0] = 0 #start time 0
     data[1,0] = max_y_base * height #starting y at max of egg
@@ -219,7 +222,7 @@ def check_domains(domains):
             return False
     return True
 
-def dive_depth(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
+def dive_depth(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     """ 
     Wrapper over integration method which returns 0 if parameters are invalid else returns the depth of the dive, not including initial position
     
@@ -231,7 +234,7 @@ def dive_depth(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten
         width : (0.05, 0.6), #TODO find real limit
         groove_angle : (0, tau/n if n > 1 else 0),
         n : (0, 20), #TODO decide on actual max n
-        mass : (0, 1), #TODO find real limit
+        egg_density : (0, density), #TODO find real limit
         depth : (0, depth / 2 if groove_angle > 0 else 0),
         Cd : (0, 1), #TODO is this a valid bound
         density : (0, math.inf),
@@ -244,7 +247,7 @@ def dive_depth(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten
     if not check_domains(domains):
         return 0
     try:
-        dive_data = integrate(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt, time)
+        dive_data = integrate(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt, time)
         y0 = dive_data[1,0] #initial y position
         yf = dive_data[1].max()
         depth = yf - y0
@@ -267,15 +270,15 @@ def depth_wrapper(params, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2
     width = params[1]
     groove_angle = params[2]
     n = int(params[3])
-    mass = params[4]
+    egg_density = params[4]
     depth = params[5]
     #print(params) #TODO remove
-    total_depth = -dive_depth(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt, time)
+    total_depth = -dive_depth(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt, time)
     #print(total_depth)
     return total_depth
 
-def plot_dive(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
-    data = integrate(height, width, groove_angle, n, mass, depth, Cd, density, sur_ten, contact_angle, dt, time)
+def plot_dive(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
+    data = integrate(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt, time)
     plt.plot(data[0], data[1], 'r-', label="position")
     plt.plot(data[0], data[2], 'b-', label="velocity")
     plt.legend()
