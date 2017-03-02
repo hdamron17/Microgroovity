@@ -12,8 +12,8 @@ max_y_base = 1 - 1/math.sqrt(3) #max y (when multiplied by B in egg_function)
 tau = 2 * math.pi #tau revolution
 
 example_params_dict = OrderedDict([
-    ("height",          0.05),
-    ("width",           0.05),
+    ("height",          0.1),
+    ("width",           0.1),
     ("groove_angle",    tau/8),
     ("n",               8),
     ("egg_density",     300),
@@ -189,6 +189,7 @@ def integrate(height, width, groove_angle, n, egg_density, depth, Cd, density, s
     :param egg_density: density of egg (greater than fluid density) {kg/m^3}
     :return: Returns numpy 2D array with rows: time, y position, y velocity
     """
+    n = int(n)
     egg_volume = volume(width, height, groove_angle, n, depth)
     mass = density * egg_volume
 
@@ -217,8 +218,8 @@ def check_domains(domains):
     :return: returns True if all values are valid, else False
     """
     for key, value in domains.items():
-        if value[0] > value[1] or value[0] > key < value[1]:
-            print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
+        if value[0] > value[1] or  key < value[0] or key > value[1]:
+            #print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
             return False
     return True
 
@@ -229,6 +230,7 @@ def dive_depth(height, width, groove_angle, n, egg_density, depth, Cd, density, 
     Note that all parameters are described in integrate() function comments
     :return: returns depth of dive (subtracts starting y) or 0 if parameters are out of bounds
     """
+    n = int(n)
     domains = {
         height : (0.05, 0.6), #TODO find real limit
         width : (0.05, 0.6), #TODO find real limit
