@@ -69,6 +69,18 @@ def egg_derivative(y, width, height):
     #The original derivation yields dx/dy but then it is inversed to dy/dx #TODO check validity of this statement
     #TODO if we're going to use a different shape for the groove, this is wrong
 
+def area(y, width, height, groove_angle, n, depth):
+    """ 
+    Calculates area at a specific point in the egg
+    :param y: y position on egg
+    :param width: width of egg
+    :param height: height of egg
+    :param groove_angle: surface angle of each groove from center (radians)
+    :param n: number of grooves
+    :param depth: depth of each groove
+    """
+    pass #TODO
+
 def perimeter(y, width, height, groove_angle, n, depth):
     """ 
     Calculates the perimeter of an egg on a cross-section
