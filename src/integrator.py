@@ -248,10 +248,8 @@ def dive_depth(height, width, groove_angle, n, egg_density, depth, Cd, density, 
         return 0
     try:
         dive_data = integrate(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt, time)
-        y0 = dive_data[1,0] #initial y position
         yf = dive_data[1].max()
-        depth = yf - y0
-        #print("%s - %s = %s" % (yf, y0, yf-y0)) #TODO remove
+        depth = yf - height
         return depth
     except Exception as e:
         #print("Excepted")
