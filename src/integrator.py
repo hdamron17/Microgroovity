@@ -16,7 +16,7 @@ example_params_dict = OrderedDict([
     ("width",           0.05),
     ("groove_angle",    tau/8),
     ("n",               8),
-    ("egg_density",            0.01),
+    ("egg_density",     300),
     ("depth",           0.001),
     ("Cd",              0.5),
     ("density",         1000),
@@ -218,7 +218,7 @@ def check_domains(domains):
     """
     for key, value in domains.items():
         if value[0] > value[1] or value[0] > key < value[1]:
-            #print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
+            print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
             return False
     return True
 
@@ -234,7 +234,7 @@ def dive_depth(height, width, groove_angle, n, egg_density, depth, Cd, density, 
         width : (0.05, 0.6), #TODO find real limit
         groove_angle : (0, tau/n if n > 1 else 0),
         n : (0, 20), #TODO decide on actual max n
-        egg_density : (0, density), #TODO find real limit
+        egg_density : (160, density), #density of balsa wood to density of water #TODO find real limit
         depth : (0, depth / 2 if groove_angle > 0 else 0),
         Cd : (0, 1), #TODO is this a valid bound
         density : (0, math.inf),
