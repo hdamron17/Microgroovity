@@ -274,7 +274,7 @@ def depth_wrapper(params, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2
     depth = params[5]
     #print(params) #TODO remove
     total_depth = -dive_depth(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt, time)
-    #print(total_depth)
+    print(total_depth) #TODO remove
     return total_depth
 
 def plot_dive(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
