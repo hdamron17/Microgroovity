@@ -12,8 +12,8 @@ max_y_base = 1 - 1/math.sqrt(3) #max y (when multiplied by B in egg_function)
 tau = 2 * math.pi #tau revolution
 
 example_params_dict = OrderedDict([
-    ("height",          0.1),
-    ("width",           0.1),
+    ("height",          0.05),
+    ("width",           0.05),
     ("groove_angle",    tau/8),
     ("n",               8),
     ("egg_density",     300),
