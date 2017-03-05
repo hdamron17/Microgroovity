@@ -12,8 +12,8 @@ max_y_base = 1 - 1/math.sqrt(3) #max y (when multiplied by B in egg_function)
 tau = 2 * math.pi #tau revolution
 
 example_params_dict = OrderedDict([
-    ("height",          0.05),
-    ("width",           0.05),
+    ("height",          0.005),
+    ("width",           0.005),
     ("groove_angle",    tau/8),
     ("n",               8),
     ("egg_density",     300),
@@ -232,8 +232,8 @@ def dive_depth(height, width, groove_angle, n, egg_density, depth, Cd, density, 
     """
     n = int(n)
     domains = {
-        height : (0.05, 0.6), #TODO find real limit
-        width : (0.05, 0.6), #TODO find real limit
+        height : (0.005, 0.06), #TODO find real limit
+        width : (0.005, 0.06), #TODO find real limit
         groove_angle : (0, tau/n if n > 1 else 0),
         n : (0, 20), #TODO decide on actual max n
         egg_density : (160, density), #density of balsa wood to density of water #TODO find real limit
