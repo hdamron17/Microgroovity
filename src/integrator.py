@@ -40,7 +40,7 @@ def egg_function(y, width, height):
     assert max_y <= y <= height, "y value %f out of range" % y #checks range
     #TODO if y > max_y: do ellipse
     A0 = 1 / (4 * max_y_base * (1-max_y_base) * (1-max_y_base/2))
-    return width * math.sqrt(A0 / height * (1 - y/height) * (1 - y/(2*height)))
+    return width * math.sqrt(A0 / height * y * (1 - y/height) * (1 - y/(2*height)))
 
 def groove_function(y, depth, width, height):
     """ 
@@ -219,7 +219,7 @@ def check_domains(domains):
     """
     for key, value in domains.items():
         if value[0] > value[1] or  key < value[0] or key > value[1]:
-            #print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
+            print("%s > %s < %s" % (value[0], key, value[1])) #TODO remove
             return False
     return True
 
@@ -234,8 +234,8 @@ def dive_depth(height, width, groove_angle, n, egg_density, depth, Cd, density, 
     domains = {
         height : (0.005, 0.06), #TODO find real limit
         width : (0.005, 0.06), #TODO find real limit
-        groove_angle : (0, tau/n if n > 1 else 0),
-        n : (0, 20), #TODO decide on actual max n
+        groove_angle : (5*tau/360, tau/n if n > 1 else 0),
+        n : (0, int(tau/groove_angle) if groove_angle > 0 else 0), #TODO decide on actual max n
         egg_density : (160, density), #density of balsa wood to density of water #TODO find real limit
         depth : (0, depth / 2 if groove_angle > 0 else 0),
         Cd : (0, 1), #TODO is this a valid bound
@@ -266,6 +266,7 @@ def depth_wrapper(params, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2
     :return: returns negative of dive depth from the dive_depth function
     Note: negative because scipy implements minimize while we aim to maximize
     """
+    params = np.multiply(params,[0.6,0.6,tau/2,20,1000,0.3])
     height = params[0]
     width = params[1]
     groove_angle = params[2]
@@ -274,8 +275,11 @@ def depth_wrapper(params, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2
     depth = params[5]
     #print(params) #TODO remove
     total_depth = -dive_depth(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt, time)
-    print(total_depth) #TODO remove
+    #print(total_depth) #TODO remove
     return total_depth
+
+def depth_outer_wrapper(params):
+    return depth_wrapper(params, *example_params[6:])
 
 def plot_dive(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt=0.01, time=2.2):
     data = integrate(height, width, groove_angle, n, egg_density, depth, Cd, density, sur_ten, contact_angle, dt, time)
